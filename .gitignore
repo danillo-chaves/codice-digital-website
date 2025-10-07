@@ -1,0 +1,20 @@
+# Arquivos de metadados do Dart e Flutter
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+
+# Arquivos de build
+build/
+
+# Arquivos de configuração específicos da IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Arquivos de log e dependências
+pubspec.lock

@@ -1,0 +1,20 @@
+[debug] [2025-10-06T22:10:35.507Z] ----------------------------------------------------------------------
+[debug] [2025-10-06T22:10:35.508Z] Command:       /opt/homebrew/Cellar/node/23.11.0/bin/node /opt/homebrew/bin/firebase apps:create web codice_digital (windows) --json --project=codice-digital-aeea8
+[debug] [2025-10-06T22:10:35.508Z] CLI Version:   14.18.0
+[debug] [2025-10-06T22:10:35.508Z] Platform:      darwin
+[debug] [2025-10-06T22:10:35.509Z] Node Version:  v23.11.0
+[debug] [2025-10-06T22:10:35.509Z] Time:          Mon Oct 06 2025 19:10:35 GMT-0300 (Brasilia Standard Time)
+[debug] [2025-10-06T22:10:35.509Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-10-06T22:10:35.511Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-10-06T22:10:35.511Z] > authorizing via signed-in user (codicedigital0@gmail.com)
+[info] Create your WEB app in project codice-digital-aeea8:
+[debug] [2025-10-06T22:10:35.513Z] Checked if tokens are valid: true, expires at: 1759792105693
+[debug] [2025-10-06T22:10:35.513Z] Checked if tokens are valid: true, expires at: 1759792105693
+[debug] [2025-10-06T22:10:35.513Z] >>> [apiv2][query] POST https://firebase.googleapis.com/v1beta1/projects/codice-digital-aeea8/webApps [none]
+[debug] [2025-10-06T22:10:35.513Z] >>> [apiv2][body] POST https://firebase.googleapis.com/v1beta1/projects/codice-digital-aeea8/webApps {"displayName":"codice_digital (windows)"}
+[debug] [2025-10-06T22:10:37.003Z] <<< [apiv2][status] POST https://firebase.googleapis.com/v1beta1/projects/codice-digital-aeea8/webApps 200
+[debug] [2025-10-06T22:10:37.003Z] <<< [apiv2][body] POST https://firebase.googleapis.com/v1beta1/projects/codice-digital-aeea8/webApps {"name":"operations/workflows/MDUzOThmMjUtOThhNy00YzY0LWIzMzUtNzg5YTVjZTVjYTM2"}
+[debug] [2025-10-06T22:10:37.004Z] Checked if tokens are valid: true, expires at: 1759792105693
+[debug] [2025-10-06T22:10:37.004Z] Checked if tokens are valid: true, expires at: 1759792105693
+[debug] [2025-10-06T22:10:37.004Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/operations/workflows/MDUzOThmMjUtOThhNy00YzY0LWIzMzUtNzg5YTVjZTVjYTM2 [none]

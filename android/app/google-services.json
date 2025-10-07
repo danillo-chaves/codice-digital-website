@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "769678346511",
+    "project_id": "codice-digital-aeea8",
+    "storage_bucket": "codice-digital-aeea8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:769678346511:android:a61c24d8c4a59fe35b967a",
+        "android_client_info": {
+          "package_name": "com.example.codice_digital"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD4fuDfDvZhklWU6-QWce6F2mXSbjx7oxg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
