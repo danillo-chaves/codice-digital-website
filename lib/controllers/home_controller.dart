@@ -1,19 +1,17 @@
-// lib/controllers/home_controller.dart (VERSÃO FINAL E COMPLETA)
-
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:codice_digital/models/contact_model.dart';
 import 'package:codice_digital/models/plan_model.dart';
 import 'package:codice_digital/models/service_model.dart';
 import 'package:flutter/material.dart';
 
 class HomeController {
-  // DADOS PARA A HERO SECTION
-  final ValueNotifier<String> headline = ValueNotifier<String>(
-    'Códice Digital: Transformamos Ideias em Realidade Digital.',
-  );
-  final ValueNotifier<String> subHeadline = ValueNotifier<String>(
-    'Desenvolvimento de software sob medida e otimização de presença online para alavancar seu negócio.',
-  );
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // DADOS PARA A SEÇÃO DE SERVIÇOS
+  // DADOS DA HERO SECTION (agora vêm do Firestore)
+  final ValueNotifier<String> headline = ValueNotifier<String>('Carregando...');
+  final ValueNotifier<String> subHeadline = ValueNotifier<String>('');
+
+  // DADOS DA SEÇÃO DE SERVIÇOS (continuam fixos no código)
   final ValueNotifier<List<ServiceModel>>
   services = ValueNotifier<List<ServiceModel>>([
     ServiceModel(
@@ -30,7 +28,7 @@ class HomeController {
     ),
   ]);
 
-  // DADOS PARA A SEÇÃO DE PLANOS
+  // DADOS DA SEÇÃO DE PLANOS (continuam fixos no código)
   final ValueNotifier<List<PlanModel>> plans = ValueNotifier<List<PlanModel>>([
     PlanModel(
       title: 'Fundação Digital',
@@ -73,14 +71,76 @@ class HomeController {
     ),
   ]);
 
+  // LÓGICA DO FORMULÁRIO DE CONTATO
+  final formKey = GlobalKey<FormState>();
+  final nameController = TextEditingController();
+  final emailController = TextEditingController();
+  final messageController = TextEditingController();
+  final ValueNotifier<bool> isLoading = ValueNotifier<bool>(false);
+
+  // CONSTRUTOR DA CLASSE
+  HomeController() {
+    _fetchLandingPageContent();
+  }
+
+  // MÉTODO PARA BUSCAR CONTEÚDO DO FIRESTORE
+  Future<void> _fetchLandingPageContent() async {
+    try {
+      final doc = await _firestore
+          .collection('site_content')
+          .doc('landing_page')
+          .get();
+      if (doc.exists) {
+        final data = doc.data()!;
+        headline.value = data['heroHeadline'] ?? 'Título não encontrado';
+        subHeadline.value =
+            data['heroSubheadline'] ?? 'Subtítulo não encontrado';
+      }
+    } catch (e) {
+      debugPrint("Erro ao buscar conteúdo da landing page: $e");
+      headline.value = 'Erro ao carregar o título';
+    }
+  }
+
+  // MÉTODO PARA O BOTÃO DA HERO SECTION
   void scrollToContact() {
     debugPrint('Botão CTA clicado! Rolando para o contato...');
   }
 
+  // MÉTODO PARA ENVIAR FORMULÁRIO DE CONTATO
+  Future<void> submitContactForm() async {
+    if (formKey.currentState!.validate()) {
+      isLoading.value = true;
+
+      final contact = ContactModel(
+        name: nameController.text,
+        email: emailController.text,
+        message: messageController.text,
+        timestamp: Timestamp.now(),
+      );
+
+      try {
+        await _firestore.collection('contacts').add(contact.toMap());
+        nameController.clear();
+        emailController.clear();
+        messageController.clear();
+        debugPrint('Contato salvo com sucesso!');
+      } catch (e) {
+        debugPrint('Erro ao salvar contato: $e');
+      }
+      isLoading.value = false;
+    }
+  }
+
+  // MÉTODO PARA LIMPAR A MEMÓRIA
   void dispose() {
     headline.dispose();
     subHeadline.dispose();
     services.dispose();
     plans.dispose();
+    nameController.dispose();
+    emailController.dispose();
+    messageController.dispose();
+    isLoading.dispose();
   }
 }
