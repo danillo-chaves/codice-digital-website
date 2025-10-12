@@ -11,10 +11,23 @@ class EditContentSection extends StatefulWidget {
 
 class _EditContentSectionState extends State<EditContentSection> {
   final _formKey = GlobalKey<FormState>();
-  final _headlineController = TextEditingController();
-  final _subheadlineController = TextEditingController();
   bool _isLoading = true;
   bool _isSaving = false;
+
+  // Controladores para a Seção Hero
+  final _headlineController = TextEditingController();
+  final _subheadlineController = TextEditingController();
+
+  // Controladores para a Seção de Serviços
+  final _service1TitleController = TextEditingController();
+  final _service1DescController = TextEditingController();
+  final _service2TitleController = TextEditingController();
+  final _service2DescController = TextEditingController();
+
+  // Guarda a lista de planos e os nomes dos ícones
+  List<dynamic> _plans = [];
+  String _service1IconName = 'help';
+  String _service2IconName = 'help';
 
   @override
   void initState() {
@@ -23,12 +36,29 @@ class _EditContentSectionState extends State<EditContentSection> {
   }
 
   Future<void> _loadContent() async {
-    final data = await widget.controller.loadHeroSectionContent();
-    if (data != null) {
+    final data = await widget.controller.loadPageContent();
+    if (data != null && mounted) {
+      // Carrega dados da Hero
       _headlineController.text = data['heroHeadline'] ?? '';
       _subheadlineController.text = data['heroSubheadline'] ?? '';
-    }
-    if (mounted) {
+
+      // Carrega dados dos Serviços
+      if (data['services'] is List && (data['services'] as List).length >= 2) {
+        final services = data['services'] as List;
+        _service1IconName = services[0]['icon'] ?? 'help';
+        _service1TitleController.text = services[0]['title'] ?? '';
+        _service1DescController.text = services[0]['description'] ?? '';
+        _service2IconName = services[1]['icon'] ?? 'help';
+        _service2TitleController.text = services[1]['title'] ?? '';
+        _service2DescController.text = services[1]['description'] ?? '';
+      }
+
+      // Carrega os dados dos Planos
+      if (data['plans'] is List) {
+        // Criamos uma cópia mutável da lista para poder editá-la
+        _plans = List<dynamic>.from(data['plans'] as List);
+      }
+
       setState(() => _isLoading = false);
     }
   }
@@ -36,10 +66,29 @@ class _EditContentSectionState extends State<EditContentSection> {
   Future<void> _saveContent() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isSaving = true);
-      final success = await widget.controller.saveHeroSectionContent(
-        headline: _headlineController.text,
-        subheadline: _subheadlineController.text,
+
+      final dataToSave = {
+        'heroHeadline': _headlineController.text,
+        'heroSubheadline': _subheadlineController.text,
+        'services': [
+          {
+            'icon': _service1IconName,
+            'title': _service1TitleController.text,
+            'description': _service1DescController.text,
+          },
+          {
+            'icon': _service2IconName,
+            'title': _service2TitleController.text,
+            'description': _service2DescController.text,
+          },
+        ],
+        'plans': _plans, // A lista de planos agora é incluída ao salvar
+      };
+
+      final success = await widget.controller.savePageContent(
+        dataToSave: dataToSave,
       );
+
       if (mounted) {
         setState(() => _isSaving = false);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -58,7 +107,197 @@ class _EditContentSectionState extends State<EditContentSection> {
   void dispose() {
     _headlineController.dispose();
     _subheadlineController.dispose();
+    _service1TitleController.dispose();
+    _service1DescController.dispose();
+    _service2TitleController.dispose();
+    _service2DescController.dispose();
     super.dispose();
+  }
+
+  void _showPlanDialog({Map<String, dynamic>? planData, int? index}) {
+    final isEditing = planData != null;
+    final dialogFormKey = GlobalKey<FormState>();
+
+    final titleController = TextEditingController(
+      text: isEditing ? planData['title'] : '',
+    );
+    final priceController = TextEditingController(
+      text: isEditing ? planData['price'] : '',
+    );
+    final featuresController = TextEditingController(
+      text: isEditing ? (planData['features'] as List).join('\n') : '',
+    );
+    final buttonTextController = TextEditingController(
+      text: isEditing ? planData['buttonText'] : '',
+    );
+    bool isFeatured = isEditing ? planData['isFeatured'] : false;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Text(isEditing ? 'Editar Plano' : 'Adicionar Novo Plano'),
+              content: Form(
+                key: dialogFormKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextFormField(
+                        controller: titleController,
+                        decoration: const InputDecoration(labelText: 'Título'),
+                        validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
+                      ),
+                      TextFormField(
+                        controller: priceController,
+                        decoration: const InputDecoration(
+                          labelText: 'Preço (Ex: R\$490\\n(Pagamento Único))',
+                        ),
+                        validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
+                      ),
+                      TextFormField(
+                        controller: featuresController,
+                        decoration: const InputDecoration(
+                          labelText: 'Funcionalidades (uma por linha)',
+                        ),
+                        maxLines: 5,
+                        validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
+                      ),
+                      TextFormField(
+                        controller: buttonTextController,
+                        decoration: const InputDecoration(
+                          labelText: 'Texto do Botão',
+                        ),
+                        validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
+                      ),
+                      SwitchListTile(
+                        title: const Text('Plano em Destaque?'),
+                        value: isFeatured,
+                        onChanged: (value) =>
+                            setDialogState(() => isFeatured = value),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  child: const Text('Cancelar'),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+                FilledButton(
+                  child: const Text('Salvar'),
+                  onPressed: () {
+                    if (dialogFormKey.currentState!.validate()) {
+                      final newPlanData = {
+                        'title': titleController.text,
+                        'price': priceController.text,
+                        'features': featuresController.text
+                            .split('\n')
+                            .where((s) => s.isNotEmpty)
+                            .toList(),
+                        'buttonText': buttonTextController.text,
+                        'isFeatured': isFeatured,
+                      };
+                      setState(() {
+                        if (isEditing) {
+                          _plans[index!] = newPlanData;
+                        } else {
+                          _plans.add(newPlanData);
+                        }
+                      });
+                      Navigator.of(context).pop();
+                    }
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showDeleteConfirmation(int index) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmar Exclusão'),
+        content: const Text(
+          'Você tem certeza que deseja excluir este plano? Esta ação não pode ser desfeita.',
+        ),
+        actions: [
+          TextButton(
+            child: const Text('Cancelar'),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Excluir'),
+            onPressed: () {
+              setState(() => _plans.removeAt(index));
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlanTile(Map<String, dynamic> planData, int index) {
+    return ExpansionTile(
+      leading: Icon(
+        planData['isFeatured'] == true ? Icons.star : Icons.label_outline,
+      ),
+      title: Text(planData['title'] ?? 'Plano sem título'),
+      subtitle: Text(
+        planData['price']?.replaceAll('\\n', ' ') ?? 'Preço não definido',
+      ),
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Funcionalidades:',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: 8),
+              if (planData['features'] is List)
+                for (var feature in (planData['features'] as List))
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 4.0),
+                    child: Text('• $feature'),
+                  ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton.icon(
+                    icon: const Icon(Icons.edit),
+                    label: const Text('Editar'),
+                    onPressed: () =>
+                        _showPlanDialog(planData: planData, index: index),
+                  ),
+                  const SizedBox(width: 8),
+                  TextButton.icon(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    label: const Text(
+                      'Excluir',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                    onPressed: () => _showDeleteConfirmation(index),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -90,32 +329,106 @@ class _EditContentSectionState extends State<EditContentSection> {
                 TextFormField(
                   controller: _headlineController,
                   decoration: const InputDecoration(
-                    labelText: 'Título Principal (Headline)',
+                    labelText: 'Título Principal',
                     border: OutlineInputBorder(),
                   ),
                   maxLines: null,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'O título principal não pode ser vazio.';
-                    }
-                    return null;
-                  },
+                  validator: (v) => v!.isEmpty ? 'Campo obrigatório.' : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _subheadlineController,
                   decoration: const InputDecoration(
-                    labelText: 'Subtítulo (Subheadline)',
+                    labelText: 'Subtítulo',
                     border: OutlineInputBorder(),
                   ),
                   maxLines: null,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'O subtítulo não pode ser vazio.';
-                    }
-                    return null;
-                  },
+                  validator: (v) => v!.isEmpty ? 'Campo obrigatório.' : null,
                 ),
+                const Divider(height: 64),
+                Text(
+                  'Seção de Serviços',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Primeiro Serviço',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _service1TitleController,
+                  decoration: const InputDecoration(
+                    labelText: 'Título do Serviço 1',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (v) => v!.isEmpty ? 'Campo obrigatório.' : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _service1DescController,
+                  decoration: const InputDecoration(
+                    labelText: 'Descrição do Serviço 1',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 3,
+                  validator: (v) => v!.isEmpty ? 'Campo obrigatório.' : null,
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Segundo Serviço',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _service2TitleController,
+                  decoration: const InputDecoration(
+                    labelText: 'Título do Serviço 2',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (v) => v!.isEmpty ? 'Campo obrigatório.' : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _service2DescController,
+                  decoration: const InputDecoration(
+                    labelText: 'Descrição do Serviço 2',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 3,
+                  validator: (v) => v!.isEmpty ? 'Campo obrigatório.' : null,
+                ),
+                const Divider(height: 64),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Seção de Planos',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    FilledButton.tonalIcon(
+                      icon: const Icon(Icons.add),
+                      label: const Text('Adicionar Plano'),
+                      onPressed: () => _showPlanDialog(),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                if (_plans.isEmpty)
+                  const Text('Nenhum plano cadastrado.')
+                else
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _plans.length,
+                    itemBuilder: (context, index) {
+                      final plan = _plans[index] as Map<String, dynamic>;
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        child: _buildPlanTile(plan, index),
+                      );
+                    },
+                  ),
                 const SizedBox(height: 48),
                 ElevatedButton(
                   onPressed: _isSaving ? null : _saveContent,

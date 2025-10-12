@@ -1,5 +1,3 @@
-// lib/views/home/home_page.dart (VERSÃO COM ANIMAÇÃO "ESCONDER ATRÁS DO LOGO")
-
 import 'package:codice_digital/app/core/theme/app_theme.dart';
 import 'package:codice_digital/controllers/home_controller.dart';
 import 'package:codice_digital/views/home/widgets/contact_section.dart';
@@ -19,6 +17,7 @@ class _HomePageState extends State<HomePage> {
   final ScrollController _scrollController = ScrollController();
 
   bool _isScrolled = false;
+  bool _animateTitle = false;
 
   @override
   void initState() {
@@ -34,6 +33,12 @@ class _HomePageState extends State<HomePage> {
         }
       }
     });
+
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        setState(() => _animateTitle = true);
+      }
+    });
   }
 
   @override
@@ -41,6 +46,55 @@ class _HomePageState extends State<HomePage> {
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  Widget _buildTopAppBarContent() {
+    return Stack(
+      key: const ValueKey('LogoTitle'),
+      alignment: Alignment.centerLeft,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 16.0),
+          child: Image.asset('assets/images/logo.png', height: 35),
+        ),
+        AnimatedPadding(
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeOut,
+          padding: EdgeInsets.only(left: _animateTitle ? 61.0 : 45.0),
+          child: AnimatedOpacity(
+            duration: const Duration(milliseconds: 400),
+            opacity: _animateTitle ? 1.0 : 0.0,
+            child: const Text('Códice Digital'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildScrolledAppBarContent() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Row(
+        key: const ValueKey('LogoMenu'),
+        children: [
+          Image.asset('assets/images/logo.png', height: 35),
+          const Spacer(),
+          IconButton(
+            icon: const Icon(Icons.admin_panel_settings_outlined),
+            onPressed: () {
+              Navigator.pushNamed(context, '/admin');
+            },
+            tooltip: 'Acessar Painel Admin',
+          ),
+          IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () {
+              debugPrint('Menu clicado!');
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -69,47 +123,11 @@ class _HomePageState extends State<HomePage> {
                 width: 1,
               ),
             ),
-            child: Row(
-              children: [
-                // 1. Usamos um Stack para sobrepor o logo e o texto
-                Stack(
-                  alignment: Alignment.centerLeft,
-                  children: [
-                    // O contêiner do texto
-                    AnimatedPadding(
-                      duration: const Duration(milliseconds: 300),
-                      // Se rolou a tela, o padding esquerdo diminui, movendo o texto para "trás" do logo
-                      padding: EdgeInsets.only(left: _isScrolled ? 16.0 : 61.0),
-                      child: AnimatedOpacity(
-                        duration: const Duration(milliseconds: 300),
-                        // Se rolou a tela, o texto fica invisível
-                        opacity: _isScrolled ? 0.0 : 1.0,
-                        child: const Text('Códice Digital'),
-                      ),
-                    ),
-                    // O logo fica por cima de tudo no Stack
-                    Padding(
-                      padding: const EdgeInsets.only(left: 16.0),
-                      child: Image.asset(
-                        'assets/images/logo.png', // Verifique o nome do seu logo
-                        height: 35,
-                      ),
-                    ),
-                  ],
-                ),
-                const Spacer(),
-                // O menu continua com a mesma animação de opacidade
-                AnimatedOpacity(
-                  duration: const Duration(milliseconds: 300),
-                  opacity: _isScrolled ? 1.0 : 0.0,
-                  child: IconButton(
-                    icon: const Icon(Icons.menu),
-                    onPressed: _isScrolled
-                        ? () => debugPrint('Menu clicado!')
-                        : null,
-                  ),
-                ),
-              ],
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: _isScrolled
+                  ? _buildScrolledAppBarContent()
+                  : _buildTopAppBarContent(),
             ),
           ),
         ),

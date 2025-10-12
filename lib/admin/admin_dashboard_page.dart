@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:codice_digital/admin/edit_content_section.dart';
 import 'package:codice_digital/controllers/admin_controller.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // <-- LINHA CORRIGIDA
+import 'package:intl/intl.dart';
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
@@ -35,6 +35,13 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
         title: const Text('Painel Códice Digital'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.public),
+            onPressed: () {
+              Navigator.pushNamed(context, '/');
+            },
+            tooltip: 'Ver Site',
+          ),
+          IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
               adminController.signOut();
@@ -53,10 +60,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
       body: TabBarView(
         controller: _tabController,
         children: <Widget>[
-          // Conteúdo da primeira aba (Leads)
           _buildLeadsList(),
-
-          // Conteúdo da segunda aba (Editar Conteúdo)
           EditContentSection(controller: adminController),
         ],
       ),

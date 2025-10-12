@@ -1,24 +1,40 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 
 class AdminController {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // --- MÉTODOS DE AUTENTICAÇÃO E LEADS ---
+  // --- MÉTODOS DE AUTENTICAÇÃO ---
 
   Future<User?> signInWithEmailAndPassword({
     required String email,
     required String password,
   }) async {
-    // ... (código de login existente)
+    try {
+      final userCredential = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      debugPrint("Login bem-sucedido: ${userCredential.user!.uid}");
+      return userCredential.user;
+    } on FirebaseAuthException catch (e) {
+      debugPrint("Erro no login: ${e.message}");
+      return null;
+    }
   }
 
   Future<void> signOut() async {
-    // ... (código de logout existente)
+    try {
+      await _auth.signOut();
+      debugPrint("Logout bem-sucedido!");
+    } catch (e) {
+      debugPrint("Erro no logout: $e");
+    }
   }
+
+  // --- MÉTODO PARA LEADS (CONTATOS) ---
 
   Stream<QuerySnapshot> getContactsStream() {
     return _firestore
@@ -27,39 +43,37 @@ class AdminController {
         .snapshots();
   }
 
-  // --- NOVOS MÉTODOS PARA GERENCIAMENTO DE CONTEÚDO ---
+  // --- MÉTODOS PARA GERENCIAMENTO DE CONTEÚDO ---
 
-  // Método para carregar os textos atuais do Firestore
-  Future<Map<String, dynamic>?> loadHeroSectionContent() async {
+  Future<Map<String, dynamic>?> loadPageContent() async {
     try {
       final doc = await _firestore
           .collection('site_content')
           .doc('landing_page')
           .get();
       if (doc.exists) {
-        debugPrint('Conteúdo da Hero Section carregado.');
+        debugPrint('Conteúdo da Landing Page carregado para edição.');
         return doc.data();
       }
     } catch (e) {
-      debugPrint('Erro ao carregar conteúdo da Hero Section: $e');
+      debugPrint('Erro ao carregar conteúdo para edição: $e');
     }
     return null;
   }
 
-  // Método para salvar as alterações de volta no Firestore
-  Future<bool> saveHeroSectionContent({
-    required String headline,
-    required String subheadline,
+  // Método de salvar genérico para atualizar o documento da landing page
+  Future<bool> savePageContent({
+    required Map<String, dynamic> dataToSave,
   }) async {
     try {
-      await _firestore.collection('site_content').doc('landing_page').update({
-        'heroHeadline': headline,
-        'heroSubheadline': subheadline,
-      });
-      debugPrint('Conteúdo da Hero Section salvo com sucesso!');
+      await _firestore
+          .collection('site_content')
+          .doc('landing_page')
+          .update(dataToSave);
+      debugPrint('Conteúdo da Landing Page salvo com sucesso!');
       return true;
     } catch (e) {
-      debugPrint('Erro ao salvar conteúdo da Hero Section: $e');
+      debugPrint('Erro ao salvar conteúdo da Landing Page: $e');
       return false;
     }
   }
