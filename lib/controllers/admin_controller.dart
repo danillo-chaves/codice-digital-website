@@ -34,13 +34,33 @@ class AdminController {
     }
   }
 
-  // --- MÉTODO PARA LEADS (CONTATOS) ---
+  // --- MÉTODOS PARA LEADS (CONTATOS) ---
 
   Stream<QuerySnapshot> getContactsStream() {
     return _firestore
         .collection('contacts')
         .orderBy('timestamp', descending: true)
         .snapshots();
+  }
+
+  Future<void> updateLeadStatus(String leadId, String newStatus) async {
+    try {
+      await _firestore.collection('contacts').doc(leadId).update({
+        'status': newStatus,
+      });
+      debugPrint('Status do lead $leadId atualizado para $newStatus');
+    } catch (e) {
+      debugPrint('Erro ao atualizar status do lead: $e');
+    }
+  }
+
+  Future<void> deleteLead(String leadId) async {
+    try {
+      await _firestore.collection('contacts').doc(leadId).delete();
+      debugPrint('Lead $leadId deletado com sucesso.');
+    } catch (e) {
+      debugPrint('Erro ao deletar lead: $e');
+    }
   }
 
   // --- MÉTODOS PARA GERENCIAMENTO DE CONTEÚDO ---
@@ -61,7 +81,6 @@ class AdminController {
     return null;
   }
 
-  // Método de salvar genérico para atualizar o documento da landing page
   Future<bool> savePageContent({
     required Map<String, dynamic> dataToSave,
   }) async {

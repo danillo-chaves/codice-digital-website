@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 class HomeController {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Notificadores de conteúdo agora começam todos vazios
+  // Notificadores de conteúdo
   final ValueNotifier<String> headline = ValueNotifier<String>('Carregando...');
   final ValueNotifier<String> subHeadline = ValueNotifier<String>('');
   final ValueNotifier<List<ServiceModel>> services =
@@ -21,14 +21,14 @@ class HomeController {
   final nameController = TextEditingController();
   final emailController = TextEditingController();
   final messageController = TextEditingController();
+  final phoneController = TextEditingController();
   final ValueNotifier<bool> isLoading = ValueNotifier<bool>(false);
 
-  // Construtor da classe
+  // Construtor
   HomeController() {
     _fetchLandingPageContent();
   }
 
-  // Método para "traduzir" o nome do ícone para um IconData
   IconData _getIconFromString(String iconName) {
     switch (iconName) {
       case 'code':
@@ -36,11 +36,10 @@ class HomeController {
       case 'trending_up':
         return Icons.trending_up;
       default:
-        return Icons.help; // Ícone padrão caso não encontre
+        return Icons.help;
     }
   }
 
-  // Método para buscar TODOS os dados do Firestore
   Future<void> _fetchLandingPageContent() async {
     try {
       final doc = await _firestore
@@ -50,12 +49,10 @@ class HomeController {
       if (doc.exists) {
         final data = doc.data()!;
 
-        // Carrega Hero Section
         headline.value = data['heroHeadline'] ?? 'Título não encontrado';
         subHeadline.value =
             data['heroSubheadline'] ?? 'Subtítulo não encontrado';
 
-        // Carrega Services Section
         if (data['services'] is List) {
           final servicesData = data['services'] as List;
           services.value = servicesData
@@ -69,7 +66,6 @@ class HomeController {
               .toList();
         }
 
-        // Carrega Plans Section
         if (data['plans'] is List) {
           final plansData = data['plans'] as List;
           plans.value = plansData
@@ -77,9 +73,7 @@ class HomeController {
                 (planMap) => PlanModel(
                   title: planMap['title'],
                   price: planMap['price'],
-                  features: List<String>.from(
-                    planMap['features'],
-                  ), // Converte a lista de features
+                  features: List<String>.from(planMap['features']),
                   buttonText: planMap['buttonText'],
                   isFeatured: planMap['isFeatured'],
                 ),
@@ -92,13 +86,11 @@ class HomeController {
     }
   }
 
-  // Método para o botão da Hero Section
   void scrollToContact() {
     debugPrint('Botão CTA clicado! Rolando para o contato...');
   }
 
-  // Método para enviar formulário de contato
-  Future<void> submitContactForm() async {
+  Future<bool> submitContactForm() async {
     if (formKey.currentState!.validate()) {
       isLoading.value = true;
 
@@ -106,7 +98,9 @@ class HomeController {
         name: nameController.text,
         email: emailController.text,
         message: messageController.text,
+        phone: phoneController.text,
         timestamp: Timestamp.now(),
+        status: 'Novo',
       );
 
       try {
@@ -114,15 +108,19 @@ class HomeController {
         nameController.clear();
         emailController.clear();
         messageController.clear();
+        phoneController.clear();
         debugPrint('Contato salvo com sucesso!');
+        isLoading.value = false;
+        return true;
       } catch (e) {
         debugPrint('Erro ao salvar contato: $e');
+        isLoading.value = false;
+        return false;
       }
-      isLoading.value = false;
     }
+    return false;
   }
 
-  // Método para limpar a memória
   void dispose() {
     headline.dispose();
     subHeadline.dispose();
@@ -132,5 +130,6 @@ class HomeController {
     emailController.dispose();
     messageController.dispose();
     isLoading.dispose();
+    phoneController.dispose();
   }
 }

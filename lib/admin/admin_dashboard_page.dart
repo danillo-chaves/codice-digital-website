@@ -28,6 +28,34 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
     super.dispose();
   }
 
+  Future<void> _showDeleteConfirmationDialog(String leadId) async {
+    return showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirmar Exclusão'),
+          content: const Text(
+            'Você tem certeza que deseja excluir este lead? Esta ação é permanente.',
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancelar'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: Colors.red),
+              child: const Text('Excluir'),
+              onPressed: () {
+                adminController.deleteLead(leadId);
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -84,36 +112,98 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
         }
         final contacts = snapshot.data!.docs;
         return ListView.builder(
+          padding: const EdgeInsets.all(8.0),
           itemCount: contacts.length,
           itemBuilder: (context, index) {
             final contact = contacts[index];
             final data = contact.data() as Map<String, dynamic>;
+            final status = data['status'] ?? 'Indefinido';
+
+            Color statusColor;
+            switch (status) {
+              case 'Respondido':
+                statusColor = Colors.green;
+                break;
+              case 'Lido':
+                statusColor = Colors.orange;
+                break;
+              default:
+                statusColor = Colors.blue;
+            }
+
             final timestamp = data['timestamp'] as Timestamp;
             final formattedDate = DateFormat(
               'dd/MM/yyyy HH:mm',
             ).format(timestamp.toDate());
-            return ListTile(
-              leading: const Icon(Icons.person),
-              title: Text(data['name'] ?? 'Nome não informado'),
-              subtitle: Text(data['email'] ?? 'E-mail não informado'),
-              trailing: Text(formattedDate),
-              onTap: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: Text('Mensagem de ${data['name']}'),
-                    content: SingleChildScrollView(
-                      child: Text(data['message'] ?? 'Nenhuma mensagem.'),
+
+            return Card(
+              margin: const EdgeInsets.symmetric(vertical: 4.0),
+              child: ListTile(
+                leading: Chip(
+                  label: Text(
+                    status,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
                     ),
-                    actions: [
-                      TextButton(
-                        child: const Text('Fechar'),
-                        onPressed: () => Navigator.of(context).pop(),
-                      ),
-                    ],
                   ),
-                );
-              },
+                  backgroundColor: statusColor,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 2,
+                  ),
+                  labelPadding: const EdgeInsets.symmetric(horizontal: 4),
+                  visualDensity: VisualDensity.compact,
+                ),
+                title: Text(data['name'] ?? 'Nome não informado'),
+                subtitle: Text(data['email'] ?? 'E-mail não informado'),
+                trailing: PopupMenuButton<String>(
+                  onSelected: (value) {
+                    if (value == 'delete') {
+                      _showDeleteConfirmationDialog(contact.id);
+                    } else {
+                      adminController.updateLeadStatus(contact.id, value);
+                    }
+                  },
+                  itemBuilder: (BuildContext context) =>
+                      <PopupMenuEntry<String>>[
+                        const PopupMenuItem<String>(
+                          value: 'Lido',
+                          child: Text('Marcar como Lido'),
+                        ),
+                        const PopupMenuItem<String>(
+                          value: 'Respondido',
+                          child: Text('Marcar como Respondido'),
+                        ),
+                        const PopupMenuDivider(),
+                        const PopupMenuItem<String>(
+                          value: 'delete',
+                          child: Text(
+                            'Excluir',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      ],
+                  icon: const Icon(Icons.more_vert),
+                ),
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: Text('Mensagem de ${data['name']}'),
+                      content: SingleChildScrollView(
+                        child: Text(data['message'] ?? 'Nenhuma mensagem.'),
+                      ),
+                      actions: [
+                        TextButton(
+                          child: const Text('Fechar'),
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
             );
           },
         );

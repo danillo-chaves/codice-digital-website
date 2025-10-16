@@ -14,20 +14,20 @@ class _EditContentSectionState extends State<EditContentSection> {
   bool _isLoading = true;
   bool _isSaving = false;
 
-  // Controladores para a Seção Hero
+  // Controladores para Seção Hero
   final _headlineController = TextEditingController();
   final _subheadlineController = TextEditingController();
 
-  // Controladores para a Seção de Serviços
+  // Controladores para Seção de Serviços
   final _service1TitleController = TextEditingController();
   final _service1DescController = TextEditingController();
+  final _service1IconController = TextEditingController();
   final _service2TitleController = TextEditingController();
   final _service2DescController = TextEditingController();
+  final _service2IconController = TextEditingController();
 
-  // Guarda a lista de planos e os nomes dos ícones
+  // Guarda a lista de planos
   List<dynamic> _plans = [];
-  String _service1IconName = 'help';
-  String _service2IconName = 'help';
 
   @override
   void initState() {
@@ -38,24 +38,20 @@ class _EditContentSectionState extends State<EditContentSection> {
   Future<void> _loadContent() async {
     final data = await widget.controller.loadPageContent();
     if (data != null && mounted) {
-      // Carrega dados da Hero
       _headlineController.text = data['heroHeadline'] ?? '';
       _subheadlineController.text = data['heroSubheadline'] ?? '';
 
-      // Carrega dados dos Serviços
       if (data['services'] is List && (data['services'] as List).length >= 2) {
         final services = data['services'] as List;
-        _service1IconName = services[0]['icon'] ?? 'help';
+        _service1IconController.text = services[0]['icon'] ?? 'help';
         _service1TitleController.text = services[0]['title'] ?? '';
         _service1DescController.text = services[0]['description'] ?? '';
-        _service2IconName = services[1]['icon'] ?? 'help';
+        _service2IconController.text = services[1]['icon'] ?? 'help';
         _service2TitleController.text = services[1]['title'] ?? '';
         _service2DescController.text = services[1]['description'] ?? '';
       }
 
-      // Carrega os dados dos Planos
       if (data['plans'] is List) {
-        // Criamos uma cópia mutável da lista para poder editá-la
         _plans = List<dynamic>.from(data['plans'] as List);
       }
 
@@ -72,17 +68,17 @@ class _EditContentSectionState extends State<EditContentSection> {
         'heroSubheadline': _subheadlineController.text,
         'services': [
           {
-            'icon': _service1IconName,
+            'icon': _service1IconController.text,
             'title': _service1TitleController.text,
             'description': _service1DescController.text,
           },
           {
-            'icon': _service2IconName,
+            'icon': _service2IconController.text,
             'title': _service2TitleController.text,
             'description': _service2DescController.text,
           },
         ],
-        'plans': _plans, // A lista de planos agora é incluída ao salvar
+        'plans': _plans,
       };
 
       final success = await widget.controller.savePageContent(
@@ -109,8 +105,10 @@ class _EditContentSectionState extends State<EditContentSection> {
     _subheadlineController.dispose();
     _service1TitleController.dispose();
     _service1DescController.dispose();
+    _service1IconController.dispose();
     _service2TitleController.dispose();
     _service2DescController.dispose();
+    _service2IconController.dispose();
     super.dispose();
   }
 
@@ -366,6 +364,15 @@ class _EditContentSectionState extends State<EditContentSection> {
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
+                  controller: _service1IconController,
+                  decoration: const InputDecoration(
+                    labelText: 'Nome do Ícone 1 (ex: code)',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (v) => v!.isEmpty ? 'Campo obrigatório.' : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
                   controller: _service1DescController,
                   decoration: const InputDecoration(
                     labelText: 'Descrição do Serviço 1',
@@ -384,6 +391,15 @@ class _EditContentSectionState extends State<EditContentSection> {
                   controller: _service2TitleController,
                   decoration: const InputDecoration(
                     labelText: 'Título do Serviço 2',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (v) => v!.isEmpty ? 'Campo obrigatório.' : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _service2IconController,
+                  decoration: const InputDecoration(
+                    labelText: 'Nome do Ícone 2 (ex: trending_up)',
                     border: OutlineInputBorder(),
                   ),
                   validator: (v) => v!.isEmpty ? 'Campo obrigatório.' : null,
